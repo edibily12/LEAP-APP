@@ -13,9 +13,6 @@
         @endif
 
         @if(auth()->user()->isTeacher())
-            <!-- start::Charts -->
-            <livewire:dashboard.charts />
-            <!-- end::Charts -->
 
             <!-- start::Stats  -->
             <livewire:dashboard.overall-stats />

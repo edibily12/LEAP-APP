@@ -88,9 +88,14 @@ class User extends Authenticatable
     public static function search($search = '')
     {
         return empty($search) ? static::query() : static::query()
-            ->where('name', 'LIKE', "%{$search}%")
-            ->orWhere('email', 'LIKE', "%{$search}%")
-            ->orWhere('username', 'LIKE', "%{$search}%");
+            ->leftJoin('students', 'users.id', '=', 'students.user_id')
+            ->where(function ($query) use ($search) {
+                $query->where('users.name', 'LIKE', "%{$search}%")
+                    ->orWhere('users.email', 'LIKE', "%{$search}%")
+                    ->orWhere('users.username', 'LIKE', "%{$search}%")
+                    ->orWhere('students.level', 'LIKE', "%{$search}%");
+            })
+            ->select('users.*');
     }
 
     public function roles(): BelongsToMany

@@ -174,6 +174,25 @@
                 </a>
                 <!-- end::Menu link -->
 
+                <!-- start::Menu link -->
+                <a
+                        wire:navigate
+                        x-data="{ linkHover: false }"
+                        @mouseover = "linkHover = true"
+                        @mouseleave = "linkHover = false"
+                        href="{{ route('students.analyze') }}"
+                        class="flex items-center text-gray-400 px-6 py-3 cursor-pointer hover:bg-black hover:bg-opacity-30 transition duration-200 {{ request()->routeIs('students.analyze') ? 'bg-gray-700' : '' }}"
+                >
+{{--                     <x-gmdi-assessment-o class="w-6 h-6" /> --}}
+                    <span
+                            class="ml-3 transition duration-200"
+                            :class="linkHover ? 'text-gray-100' : ''"
+                    >
+                        Analysis
+                    </span>
+                </a>
+                <!-- end::Menu link -->
+
             @endif
 
         </nav>

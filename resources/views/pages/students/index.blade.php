@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\StudentLevel;
+use App\Enums\UserType;
+use App\Models\User;
 use App\Traits\WithFilter;
 use Livewire\Volt\Component;
 
@@ -17,14 +20,14 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'students' => \App\Models\User::search($this->search)
-                ->where('type', \App\Enums\UserType::STUDENT->value)
+            'students' => User::search($this->search)
+                ->where('type', UserType::STUDENT->value)
                 ->orderBy($this->orderBy, $this->orderAsc ? 'asc' : 'desc')
                 ->paginate($this->perPage),
         ];
     }
 
-    public function deleteStudent(\App\Models\User $user): void
+    public function deleteStudent(User $user): void
     {
         $user->deleteOrFail();
 
@@ -32,7 +35,7 @@ new class extends Component {
         $this->dispatch('saved');
     }
 
-    public function resetPassword(\App\Models\User $user): void
+    public function resetPassword(User $user): void
     {
         $user->update([
             'password' => Hash::make('password'),
@@ -71,6 +74,7 @@ new class extends Component {
                             <option value="created_at">Date</option>
                             <option value="name">Name</option>
                             <option value="username">Username</option>
+                            <option value="level">Level</option>
                             <option value="email">Email</option>
                         </select>
 
@@ -101,6 +105,9 @@ new class extends Component {
                     Username
                 </td>
                 <td class="py-2 pl-2">
+                    Level
+                </td>
+                <td class="py-2 pl-2">
                     Email
                 </td>
                 <td class="py-2 pl-2"></td>
@@ -119,12 +126,16 @@ new class extends Component {
                             <td class="py-3 pl-2">
                                 {{ $student->username }}
                             </td>
+                            <td class="py-3 pl-2 {{ $student->student->level === StudentLevel::HIGHER->value ? 'text-green-600' : 'text-red-600'}}">
+                                {{ $student->student->level }}
+                            </td>
                             <td class="py-3 pl-2">
                                 {{ $student->email }}
                             </td>
 
                             <td class="py-3 pl-2 flex items-center space-x-2">
-                                <a wire:navigate title="View student" href="{{route('students.view', encrypt($student->id))}}">
+                                <a wire:navigate title="View student"
+                                   href="{{route('students.view', encrypt($student->id))}}">
                                     <x-icon name="eye" class="text-xl text-blue-600 font-black"/>
                                 </a>
 
