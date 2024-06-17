@@ -23,7 +23,7 @@ new class extends Component {
         <div class="w-full xl:w-full p-6 space-y-6 bg-white shadow-xl rounded-lg">
             <h4 class="text-xl font-semibold mb-4 capitalize">General stats</h4>
             <div class="grid grid-cols-2 gap-4 h-40">
-                <div class="bg-green-300 bg-opacity-20 text-green-700 flex flex-col items-center justify-center rounded-lg"">
+                <div class="bg-green-300 bg-opacity-20 text-green-700 flex flex-col items-center justify-center rounded-lg">
                     <span class="text-4xl font-bold">{{ $stats->all_students }}</span>
                     <span>All Students</span>
                 </div>
@@ -50,44 +50,3 @@ new class extends Component {
         <!-- end::Total stats -->
     </div>
 </div>
-
-@push('scripts')
-    <script>
-        // Stats by category
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('statsByCategory', () => ({
-                items: [{
-                    'name': 'Project 1',
-                    'percent': '71',
-                },
-                    {
-                        'name': 'Project 2',
-                        'percent': '63',
-                    },
-                    {
-                        'name': 'Project 3',
-                        'percent': '92',
-                    },
-                    {
-                        'name': 'Project 4',
-                        'percent': '84',
-                    },
-                ],
-                currentItem: {
-                    'name': 'Project 1',
-                    'percent': '71',
-                }
-            }));
-        });
-
-        // Project overview stats
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('productOverviewStats', () => ({
-                project: {
-                    'completed': 149,
-                    'in_progress': 42,
-                }
-            }));
-        });
-    </script>
-@endpush

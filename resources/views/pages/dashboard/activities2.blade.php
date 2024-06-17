@@ -2,10 +2,8 @@
 
 use App\Enums\AssessmentType;
 use App\Enums\StudentLevel;
-use App\Enums\UserType;
 use App\Models\Assessment;
 use App\Models\Question;
-use App\Models\User;
 use App\Traits\WithFilter;
 use Carbon\Carbon;
 use Livewire\Attributes\On;
@@ -28,7 +26,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'support_assessments' => Assessment::search($this->search)
+            'assessments' => Assessment::search($this->search)
                 ->where('type', AssessmentType::SUPPORT->value)
                 ->whereNot('status', '2')
                 ->orderBy($this->orderBy, $this->orderAsc ? 'asc' : 'desc')
@@ -39,30 +37,12 @@ new class extends Component {
                 ->orderBy($this->orderBy, $this->orderAsc ? 'asc' : 'desc')
                 ->paginate($this->perPage),
 
-            'support_assessments_taken' => User::join('students', 'users.id', '=', 'students.user_id')
-                ->join('assessment_reports', 'students.id', '=', 'assessment_reports.student_id')
-                ->join('assessments', 'assessment_reports.assessment_id', '=', 'assessments.id')
-                ->where('assessments.type', AssessmentType::SUPPORT->value)
-                ->where('students.id', auth()->user()->student->id)
-                ->select(
-                    'users.id as user_id',
-                    'users.name as user_name',
-                    'assessments.id as assessment_id',
-                    'assessments.start_date as start_date',
-                    'assessments.type as type',
-                    'assessments.start_time as start_time',
-                    'assessments.created_at as created_at',
-                    'assessments.type as assessment_type',
-                    'assessment_reports.total_marks',
-                    'assessment_reports.scored_marks'
-                )
-                ->get(),
-
             'total_identification_assessments' => Assessment::search($this->search)
                 ->where('type', AssessmentType::IDENTIFICATION->value)
                 ->count(),
 
             'assessments_taken' => auth()->user()->student->reports,
+            'identification_taken' => auth()->user()->student->identification_attempts,
         ];
     }
 
@@ -83,7 +63,9 @@ new class extends Component {
 }; ?>
 
 <div>
+    @use('\App\Models\IdentificationAttempt')
     @use('\App\Models\AssessmentReport')
+    @use('\Illuminate\Support\Facades\Storage')
 
     @if($student_level === StudentLevel::HIGHER->value)
         @if($identification_assessments->count() > 0)
@@ -216,7 +198,6 @@ new class extends Component {
                 </div>
                 <!-- end::Activity -->
             </div>
-
         @else
             <div class="flex flex-col xl:flex-row space-y-4 mb-16 xl:space-y-0 xl:space-x-4">
                 <!-- start::Schedule -->
@@ -228,13 +209,13 @@ new class extends Component {
             </div>
         @endif
     @else
-        @if($support_assessments->count() > 0)
+        @if($assessments->count() > 0)
             <div class="flex flex-col xl:flex-row space-y-4 mb-16 xl:space-y-0 xl:space-x-4">
                 <!-- start::Schedule -->
                 <div class="w-full xl:w-2/3 bg-white shadow-xl rounded-lg space-y-1">
                     <h4 class="text-xl font-semibold m-6 capitalize">Scheduled Assessment</h4>
                     @php $sno = 1 @endphp
-                    @foreach($support_assessments as $assessment)
+                    @foreach($assessments as $assessment)
                         <!-- start::Task in calendar -->
                         <div class="flex">
                             <div class="w-32 flex flex-col items-center justify-center px-2 bg-blue-500 text-gray-100">
@@ -264,7 +245,7 @@ new class extends Component {
                                         $user = auth()->user();
                                         $reportExist = AssessmentReport::where('student_id', $user->student->id)->where('assessment_id', $assessment->id)->exists();
                                     @endphp
-                                    @if($assessment->shuffled && !$reportExist && $assessment->status === 1 && $user->type === UserType::STUDENT->value && $user->student->questions()->count() > 0)
+                                    @if($assessment->shuffled && !$reportExist && $assessment->status === 1 && $user->type === \App\Enums\UserType::STUDENT->value && $user->student->questions()->count() > 0)
                                         <a wire:navigate
                                            href="{{ route('assessments.instructions', encrypt($assessment->id)) }}">
                                             <x-buttons.primary class="text-xs lg:text-sm p-2 rounded-lg text-center">
@@ -287,22 +268,22 @@ new class extends Component {
                         <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
 
                         <!-- start::Timeline item -->
-                        @if($support_assessments_taken->count() > 0)
-                            @foreach($support_assessments_taken as $answered)
+                        @if($assessments_taken->count() > 0)
+                            @foreach($assessments_taken as $answered)
                                 <div class="flex items-center w-full my-6 -ml-1.5">
                                     <div class="w-1/12">
                                         <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
                                     </div>
                                     <div class="w-11/12">
                                         @php
-                                            $startDate = \Carbon\Carbon::parse($answered->start_date)->format('D d-m-Y');
-                                            $startTime = \Carbon\Carbon::parse($answered->start_time)->format('h:i A');
+                                            $startDate = Carbon::parse($answered->assessment->start_date)->format('D d-m-Y');
+                                            $startTime = Carbon::parse($answered->assessment->start_time)->format('h:i A');
 
                                             $startDateTime = $startDate." ".$startTime;
                                             $average = (50*100)*$answered->total_marks;
                                         @endphp
                                         <p class="text-sm capitalize text-gray-800 font-black">Assessment
-                                            type: {{ $answered->type. ' - '. $answered->total_marks.' Marks' }}</p>
+                                            type: {{ $answered->assessment->type. ' - '. $answered->total_marks.' Marks' }}</p>
                                         <p class="text-sm">Assessment Date: {{ $startDateTime }}</p>
                                         <p class="text-sm">Submitted
                                             Date: {{ $answered->created_at->format('D d m Y H:i A') }}</p>
@@ -323,7 +304,7 @@ new class extends Component {
                                     <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
                                 </div>
                                 <div class="w-11/12">
-                                    <p class="text-sm">No results found!</p>
+                                    <p class="text-sm">You have no any attempt.!</p>
                                 </div>
                             </div>
                         @endif
@@ -336,8 +317,8 @@ new class extends Component {
         @else
             <div class="flex flex-col xl:flex-row space-y-4 mb-16 xl:space-y-0 xl:space-x-4">
                 <!-- start::Schedule -->
-                <div class="w-full bg-white shadow-xl rounded-lg py-4 px-6 space-y-1">
-                    No Assessment to display!
+                <div class="w-full bg-white shadow-xl rounded-lg space-y-1">
+                    dfgdfgd
                 </div>
             </div>
         @endif

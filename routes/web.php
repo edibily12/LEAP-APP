@@ -1,5 +1,6 @@
 <?php
 
+use App\Helpers\Helper;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,6 +16,5 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
-
-    \App\Helpers\Helper::includeRoutes(__DIR__ . '/web/');
+    Helper::includeRoutes(__DIR__ . '/web/');
 });

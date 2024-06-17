@@ -51,52 +51,42 @@
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
-            <div class="flex gap-4 mt-4">
-                <div>
-                    <x-auth-label for="name" value="{{ __('Name') }}" />
-                    <x-auth-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-                </div>
-                <div>
-                    <x-auth-label for="email" value="{{ __('Email') }}" />
-                    <x-auth-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-                </div>
+            <div>
+                <x-auth-label for="name" value="{{ __('Name') }}" />
+                <x-auth-input id="name" class="block mb-2 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            </div>
+            <div>
+                <x-auth-label for="email" value="{{ __('Email') }}" />
+                <x-auth-input id="email" class="block my-2 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+            </div>
+
+            <div>
+                <x-auth-label for="email" value="{{ __('Phone Number') }}" />
+                <x-auth-input id="number" class="block my-2 w-full" type="number" name="phone" :value="old('phone')" required autocomplete="phone" />
             </div>
 
             <div class="mt-4">
                 <x-auth-label for="dob" value="{{ __('Date of Birth') }}" />
-                <x-auth-input id="dob" class="block mt-1 w-full" type="date" name="dob" :value="old('dob')" required autofocus autocomplete="dob" />
+                <x-auth-input id="dob" class="block my-2 w-full" type="date" name="dob" :value="old('dob')" required autofocus autocomplete="dob" />
             </div>
 
             <div class="mt-4">
                 <x-auth-label for="gender" value="{{ __('Gender') }}" />
 
-                <select name="gender" id="gender" class="block mt-1 w-full dark:bg-gray-900 border border-gray-700">
+                <select name="gender" id="gender" class="block my-2 w-full dark:bg-gray-900 border border-gray-700">
                     <option value="">--select gender--</option>
                     <option value="male">MALE</option>
                     <option value="female">FEMALE</option>
                 </select>
             </div>
 
-            <div class="flex gap-4 mt-4">
-                <div>
-                    <x-auth-label for="location" value="{{ __('Location') }}" />
-                    <x-auth-input id="location" class="block mt-1 w-full" type="text" name="location" :value="old('location')" required autofocus autocomplete="location" />
-                </div>
-                <div>
-                    <x-auth-label for="language" value="{{ __('Language') }}" />
-                    <x-auth-input id="language" class="block mt-1 w-full" type="text" name="language" :value="old('language')" required autocomplete="language" />
-                </div>
+            <div>
+                <x-auth-label for="location" value="{{ __('Location') }}" />
+                <x-auth-input id="location" class="block my-2 w-full" type="text" name="location" :value="old('location')" required autofocus autocomplete="location" />
             </div>
-
-            <div class="flex gap-4 mt-4">
-                <div>
-                    <x-auth-label for="password" value="{{ __('Password') }}" />
-                    <x-auth-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-                </div>
-                <div>
-                    <x-auth-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-                    <x-auth-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-                </div>
+            <div>
+                <x-auth-label for="language" value="{{ __('Language') }}" />
+                <x-auth-input id="language" class="block my-2 w-full" type="text" name="language" :value="old('language')" required autocomplete="language" />
             </div>
 
             @if (Laravel\Jetstream\Jetstream::hasTermsAndPrivacyPolicyFeature())

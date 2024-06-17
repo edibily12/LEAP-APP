@@ -19,6 +19,7 @@
     },
     "dependencies": {
         "flowbite": "^2.3.0",
+        "flowbite-datepicker": "^1.2.7",
         "sweetalert": "^2.1.2"
     }
 }

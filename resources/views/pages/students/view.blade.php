@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AssessmentType;
+use App\Models\Assessment;
 use Livewire\Volt\Component;
 use \App\Models\User;
 use \App\Models\Student;
@@ -30,7 +32,29 @@ new class extends Component {
     {
         return [
             'assessments_taken' => $this->student->reports,
-            'identification_taken' => $this->student->identification_attempts,
+            'total_identification_assessments' => Assessment::where('type', AssessmentType::IDENTIFICATION->value)
+                ->count(),
+            'total_support_assessments' => Assessment::where('type', AssessmentType::SUPPORT->value)
+                ->count(),
+
+            'support_assessments_taken' => User::join('students', 'users.id', '=', 'students.user_id')
+                ->join('assessment_reports', 'students.id', '=', 'assessment_reports.student_id')
+                ->join('assessments', 'assessment_reports.assessment_id', '=', 'assessments.id')
+                ->where('assessments.type', AssessmentType::SUPPORT->value)
+                ->where('students.id', $this->student->id)
+                ->select(
+                    'users.id as user_id',
+                    'users.name as user_name',
+                    'assessments.id as assessment_id',
+                    'assessments.start_date as start_date',
+                    'assessments.type as type',
+                    'assessments.start_time as start_time',
+                    'assessments.created_at as created_at',
+                    'assessments.type as assessment_type',
+                    'assessment_reports.total_marks',
+                    'assessment_reports.scored_marks'
+                )
+                ->get()
         ];
     }
 
@@ -127,25 +151,25 @@ new class extends Component {
                             <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
 
                             <!-- start::Timeline item -->
-                            @if($assessments_taken->count() > 0)
-                                @foreach($assessments_taken as $answered)
+                            @if($support_assessments_taken->count() > 0)
+                                @foreach($support_assessments_taken as $answered)
                                     <div class="flex items-center w-full my-6 -ml-1.5">
                                         <div class="w-1/12">
                                             <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
                                         </div>
                                         <div class="w-11/12">
                                             @php
-                                                $startDate = \Carbon\Carbon::parse($answered->assessment->start_date)->format('D d-m-Y');
-                                                $startTime = \Carbon\Carbon::parse($answered->assessment->start_time)->format('h:i A');
+                                                $startDate = \Carbon\Carbon::parse($answered->start_date)->format('D d-m-Y');
+                                                $startTime = \Carbon\Carbon::parse($answered->start_time)->format('h:i A');
 
                                                 $startDateTime = $startDate." ".$startTime;
                                                 $average = (50*100)*$answered->total_marks;
                                             @endphp
                                             <p class="text-sm capitalize text-gray-800 font-black">Assessment
-                                                type: {{ $answered->assessment->type. ' - '. $answered->total_marks.' Marks' }}</p>
+                                                type: {{ $answered->type. ' - '. $answered->total_marks.' Marks' }}</p>
                                             <p class="text-sm">Assessment Date: {{ $startDateTime }}</p>
                                             <p class="text-sm">Submitted
-                                                Date: {{ $answered->created_at->format('D d m Y H:i A') }}</p>
+                                                 Date: {{ $answered->created_at->format('D d m Y H:i A') }}</p>
                                             <p class="text-sm">Scored Marks: {{ $answered->scored_marks }}</p>
                                             @if($answered->scored_marks >= $average)
                                                 <p class="text-sm text-green-700 font-black capitalize">Remark: Pass</p>
@@ -181,48 +205,80 @@ new class extends Component {
                     </div>
                     <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
                         <h4 class="text-xl text-gray-900 font-bold">Identification Attempts</h4>
-                        <div class="mt-4">
-                            <!-- start::Timeline item -->
-                            @if($identification_taken->count() > 0)
-                                @php $takenAttempts = 1 @endphp
-                                @foreach($identification_taken as $answered)
+                        <!-- start::Activity -->
+                        <div class="w-full xl:w-1/3 bg-white rounded-lg px-4 overflow-y-hidden">
+                            <div class="relative h-full px-8 pt-2">
+                                <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
+
+                                <!-- start::Timeline item -->
+                                @if($assessments_taken->count() > 0)
+                                    @php
+                                        $takenAttempts = 0;
+                                        $sum = 0.0;
+                                        $assessmentsTotalMarks = 0.0;
+                                    @endphp
+                                    @foreach($assessments_taken as $answered)
+                                        <div class="flex items-center w-full my-6 -ml-1.5">
+                                            <div class="w-1/12">
+                                                <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
+                                            </div>
+                                            <div class="w-11/12">
+                                                <p class="text-sm capitalize text-gray-800 font-black">
+                                                    Assessment {{ ++$takenAttempts }}</p>
+                                                <p class="text-sm">Submitted
+                                                    Date: {{ $answered->created_at->format('D d m Y H:i A') }}</p>
+                                                <p class="text-sm">Scored Marks:
+                                                    {{ $answered->scored_marks.'/'.$answered->total_marks.' Marks' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        @php
+                                            $sum+=$answered->scored_marks;
+                                            $assessmentsTotalMarks+=$answered->total_marks;
+                                        @endphp
+                                    @endforeach
+                                    @if($takenAttempts === $total_identification_assessments)
+                                        <div class="flex items-center w-full my-6 ml-8">
+                                            <div class="w-11/12">
+                                                @php $average = (50/100)*$assessmentsTotalMarks; @endphp
+                                                <p class="text-sm capitalize text-gray-800 font-black">
+                                                    Summary
+                                                </p>
+                                                <p class="text-sm">
+                                                    Total Marks: {{ $assessmentsTotalMarks }}
+                                                </p>
+                                                <p class="text-sm">
+                                                    Scored Marks: {{ $sum . "/".$assessmentsTotalMarks }}
+                                                </p>
+                                                <p class="text-sm">
+                                                    Average Score: {{ $average }}
+                                                </p>
+                                                @if($sum >= $average)
+                                                    <p class="text-sm text-green-700 font-black capitalize">Remark:
+                                                        Pass</p>
+                                                @else
+                                                    <p class="text-sm text-yellow-700 font-black capitalize">Remark:
+                                                        Keep
+                                                        Going</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                @else
                                     <div class="flex items-center w-full my-6 -ml-1.5">
                                         <div class="w-1/12">
                                             <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
                                         </div>
                                         <div class="w-11/12">
-                                            @php
-                                                $average = (50/100)*$answered->total_marks;
-                                            @endphp
-                                            <p class="text-sm capitalize text-gray-800 font-black">
-                                                Attempt {{ $takenAttempts++ }}</p>
-                                            <p class="text-sm">Submitted
-                                                Date: {{ $answered->created_at->format('D d m Y H:i A') }}</p>
-                                            <p class="text-sm">Scored Marks:
-                                                {{ $answered->scored_marks.'/'.$answered->total_marks.' Marks' }}
-                                            </p>
-                                            @if($answered->scored_marks >= $average)
-                                                <p class="text-sm text-green-700 font-black capitalize">Remark: Pass</p>
-                                            @else
-                                                <p class="text-sm text-yellow-700 font-black capitalize">Remark: Keep
-                                                    Going</p>
-                                            @endif
-
+                                            <p class="text-sm">You have no any attempt.!</p>
                                         </div>
                                     </div>
-                                @endforeach
-                            @else
-                                <div class="flex items-center w-full my-6 -ml-1.5">
-                                    <div class="w-1/12">
-                                        <div class="w-3.5 h-3.5 bg-primary rounded-full"></div>
-                                    </div>
-                                    <div class="w-11/12">
-                                        <p class="text-sm">You have no any attempt.!</p>
-                                    </div>
-                                </div>
-                            @endif
-                            <!-- end::Timeline item -->
+                                @endif
+                                <!-- end::Timeline item -->
+                            </div>
                         </div>
+                        <!-- end::Activity -->
                     </div>
                 </div>
             </div>
@@ -230,45 +286,3 @@ new class extends Component {
         <!-- end:Page content -->
     </div>
 </div>
-
-@push('scripts')
-    <script>
-
-        const DATA_SET_VERTICAL_BAR_CHART_1 = [68.106, 26.762, 94.255, 72.021, 74.082, 64.923, 85.565, 32.432, 54.664, 87.654, 43.013, 91.443];
-
-        const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-        const dataVerticalBarChart = {
-            labels: labels_vertical_bar_chart,
-            datasets: [
-                {
-                    label: 'Revenue',
-                    data: DATA_SET_VERTICAL_BAR_CHART_1,
-                    borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                }
-            ]
-        };
-        const configVerticalBarChart = {
-            type: 'bar',
-            data: dataVerticalBarChart,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Last 12 Months'
-                    }
-                }
-            },
-        };
-
-        var verticalBarChart = new Chart(
-            document.getElementById('verticalBarChart'),
-            configVerticalBarChart
-        );
-    </script>
-@endpush

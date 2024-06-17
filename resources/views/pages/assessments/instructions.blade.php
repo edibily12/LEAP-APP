@@ -31,7 +31,7 @@ new class extends Component {
                     {{ $assessment->instructions }}
                 </p>
 
-                <a wire:navigate href="{{ route('assessments.start', encrypt($assessment->id)) }}">
+                <a wire:navigate href="{{ route('assessments.read', encrypt($assessment->id)) }}">
                     <x-buttons.primary class="mx-auto mt-2">
                         {{__('START NOW')}}
                     </x-buttons.primary>
